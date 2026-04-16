@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>⭐ Face Rating Gallery</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f5f7fa;--card:#fff;
+  --primary:#4f46e5;--primary-dark:#3730a3;--primary-light:#ede9fe;
+  --secondary:#22c55e;--secondary-light:#dcfce7;
+  --accent:#f59e0b;--accent-light:#fef3c7;
+  --text:#1e1b4b;--muted:#6b7280;--border:#e5e7eb;
+  --danger:#ef4444;--danger-light:#fee2e2;
+  --shadow:0 2px 12px rgba(79,70,229,.08);
+  --shadow-lg:0 8px 30px rgba(79,70,229,.15);
+  --radius:16px;--radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.auth-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#2563eb 100%);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.auth-overlay.hidden{display:none}
+.auth-box{background:var(--card);border-radius:24px;padding:40px 34px;width:100%;max-width:420px;box-shadow:0 25px 60px rgba(0,0,0,.25);text-align:center}
+.auth-logo{width:68px;height:68px;background:linear-gradient(135deg,var(--primary),#7c3aed);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto 16px;box-shadow:0 8px 20px rgba(79,70,229,.3)}
+.auth-box h2{font-size:1.55rem;font-weight:900;margin-bottom:5px;color:var(--text)}
+.auth-box .auth-sub{color:var(--muted);font-size:.85rem;margin-bottom:28px;line-height:1.6}
+.input-group{position:relative;margin-bottom:13px;text-align:left}
+.input-group label{display:block;font-size:.76rem;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.input-group input{width:100%;padding:12px 14px 12px 42px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:.92rem;outline:none;transition:.2s}
+.input-group input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.input-icon{position:absolute;left:13px;bottom:12px;font-size:1rem;pointer-events:none}
+.auth-btn{width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;font-size:.97rem;font-weight:800;border:none;cursor:pointer;transition:.2s;box-shadow:0 4px 15px rgba(79,70,229,.35);margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
+.auth-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(79,70,229,.4)}
+.auth-btn:active{transform:translateY(0)}
+.auth-err{color:var(--danger);font-size:.8rem;background:var(--danger-light);padding:10px 14px;border-radius:8px;margin-bottom:12px;display:none;border:1px solid #fca5a5;text-align:left}
+.pin-hint{font-size:.72rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:10px 14px;border-radius:8px;margin-top:16px;line-height:1.8;text-align:left}
+.pin-hint strong{color:var(--primary)}
+.format-badge{display:inline-block;background:var(--primary-light);color:var(--primary);padding:2px 8px;border-radius:6px;font-family:monospace;font-size:.8rem;font-weight:700}
+/* Quick Admin Login Button */
+.quick-admin-btn{width:100%;margin-top:10px;padding:11px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#f97316);color:#fff;font-size:.88rem;font-weight:800;border:none;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 15px rgba(245,158,11,.3)}
+.quick-admin-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(245,158,11,.4)}
+nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:300;box-shadow:var(--shadow)}
+.nav-inner{max-width:1300px;margin:auto;display:flex;align-items:center;justify-content:space-between;height:62px;gap:10px}
+.nav-logo{display:flex;align-items:center;gap:9px;cursor:pointer}
+.nav-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--primary),#7c3aed);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;font-weight:800}
+.nav-logo-text{font-size:1.1rem;font-weight:800;color:var(--primary)}
+.nav-links{display:flex;gap:2px;align-items:center}
+.nav-links a{padding:7px 14px;border-radius:8px;font-size:.83rem;font-weight:600;color:var(--muted);transition:.2s;cursor:pointer}
+.nav-links a:hover{background:var(--primary-light);color:var(--primary)}
+.nav-links a.active-nav{background:var(--primary-light);color:var(--primary)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.user-chip{background:var(--primary-light);color:var(--primary);padding:6px 13px;border-radius:20px;font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:6px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-sm{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-size:.78rem;font-weight:700;transition:.2s}
+.btn-logout{background:var(--danger-light);color:var(--danger)}.btn-logout:hover{background:var(--danger);color:#fff}
+.page{display:none}.page.active{display:block}
+.hero{background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 40%,#2563eb 100%);padding:80px 20px 70px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40%;left:-15%;width:500px;height:500px;background:rgba(255,255,255,.05);border-radius:50%}
+.hero::after{content:'';position:absolute;bottom:-30%;right:-10%;width:400px;height:400px;background:rgba(255,255,255,.04);border-radius:50%}
+.hero-admin-btn{position:absolute;top:18px;right:22px;z-index:10;padding:9px 18px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:7px}
+.hero-admin-btn:hover{background:rgba(255,255,255,.28);transform:translateY(-1px)}
+.hero-badge{display:inline-block;background:rgba(255,255,255,.15);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 18px;border-radius:20px;font-size:.76rem;letter-spacing:2px;margin-bottom:16px;text-transform:uppercase;position:relative}
+.hero h1{font-size:clamp(2rem,5vw,3.4rem);color:#fff;margin-bottom:12px;line-height:1.2;font-weight:900;position:relative}
+.hero h1 em{color:var(--accent);font-style:normal}
+.hero p{color:rgba(255,255,255,.8);font-size:.98rem;max-width:500px;margin:0 auto 28px;position:relative}
+.hero-btn{padding:13px 36px;background:#fff;color:var(--primary);border-radius:12px;font-size:.95rem;font-weight:800;cursor:pointer;transition:.25s;box-shadow:0 8px 25px rgba(0,0,0,.2);border:none;position:relative}
+.hero-btn:hover{transform:translateY(-3px);box-shadow:0 14px 35px rgba(0,0,0,.25)}
+.hero-stats{display:flex;justify-content:center;gap:14px;margin-top:40px;flex-wrap:wrap;position:relative}
+.stat-box{background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:16px 24px;text-align:center;transition:.2s}
+.stat-box:hover{background:rgba(255,255,255,.2);transform:translateY(-3px)}
+.stat-box .num{font-size:1.9rem;font-weight:900;color:#fff}
+.stat-box .lbl{color:rgba(255,255,255,.7);font-size:.7rem;margin-top:3px;text-transform:uppercase;letter-spacing:1px}
+.section{max-width:1200px;margin:0 auto;padding:55px 20px}
+.section-title{text-align:center;margin-bottom:36px}
+.section-title h2{font-size:1.6rem;color:var(--text);margin-bottom:7px;font-weight:800}
+.section-title p{color:var(--muted);font-size:.87rem}
+.section-title .line{width:60px;height:4px;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:4px;margin:12px auto 0}
+.structure-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.struct-card{background:var(--card);border-radius:var(--radius);padding:26px 20px;border:1px solid var(--border);text-align:center;box-shadow:var(--shadow);transition:.25s}
+.struct-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+.struct-icon-wrap{width:56px;height:56px;border-radius:14px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:1.7rem}
+.struct-card:nth-child(1) .struct-icon-wrap{background:var(--primary-light)}
+.struct-card:nth-child(2) .struct-icon-wrap{background:var(--secondary-light)}
+.struct-card:nth-child(3) .struct-icon-wrap{background:var(--accent-light)}
+.struct-card:nth-child(4) .struct-icon-wrap{background:#fce7f3}
+.struct-card h3{font-size:.95rem;color:var(--text);margin-bottom:5px;font-weight:700}
+.struct-card p{font-size:.78rem;color:var(--muted);line-height:1.6}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.feat-item{background:var(--card);border-radius:var(--radius-sm);padding:18px;border:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow);transition:.2s}
+.feat-item:hover{border-color:var(--primary);transform:translateX(4px)}
+.feat-icon{font-size:1.5rem;flex-shrink:0}
+.feat-text h4{font-size:.87rem;color:var(--text);margin-bottom:3px;font-weight:700}
+.feat-text p{font-size:.76rem;color:var(--muted);line-height:1.5}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:20px}
+.member-card{background:var(--card);border-radius:var(--radius);padding:26px 18px;text-align:center;border:1px solid var(--border);box-shadow:var(--shadow);transition:.3s;cursor:pointer;position:relative;overflow:hidden}
+.member-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px}
+.member-card:nth-child(1)::after{background:linear-gradient(90deg,#22c55e,#16a34a)}
+.member-card:nth-child(2)::after{background:linear-gradient(90deg,#4f46e5,#7c3aed)}
+.member-card:nth-child(3)::after{background:linear-gradient(90deg,#3b82f6,#2563eb)}
+.member-card:nth-child(4)::after{background:linear-gradient(90deg,#9333ea,#7c3aed)}
+.member-card:hover{transform:translateY(-7px);box-shadow:var(--shadow-lg)}
+.member-photo{width:86px;height:86px;border-radius:50%;object-fit:cover;border:4px solid var(--border);margin:0 auto 14px;display:block}
+.member-online-dot{width:14px;height:14px;background:var(--secondary);border-radius:50%;border:3px solid var(--card);position:absolute;bottom:4px;right:4px}
+.member-photo-wrap{position:relative;width:86px;margin:0 auto 14px}
+.leader-badge{position:absolute;top:12px;right:12px;background:var(--accent);color:#fff;font-size:.6rem;font-weight:800;padding:3px 9px;border-radius:20px;text-transform:uppercase}
+.member-name{font-size:.94rem;font-weight:800;margin-bottom:5px}
+.member-id{font-size:.74rem;color:var(--primary);background:var(--primary-light);padding:3px 12px;border-radius:20px;display:inline-block;margin-bottom:7px;font-family:monospace;font-weight:700}
+.member-role{font-size:.74rem;color:var(--muted)}
+.go-btn{margin-top:12px;display:inline-block;padding:7px 20px;border-radius:20px;font-size:.78rem;font-weight:700;border:none;cursor:pointer;transition:.2s;color:#fff}
+.member-card:nth-child(1) .go-btn{background:#22c55e}
+.member-card:nth-child(2) .go-btn{background:var(--primary)}
+.member-card:nth-child(3) .go-btn{background:#3b82f6}
+.member-card:nth-child(4) .go-btn{background:#9333ea}
+.go-btn:hover{opacity:.85;transform:scale(1.05)}
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+.step{background:var(--card);border-radius:var(--radius-sm);padding:22px 14px;text-align:center;border:1px solid var(--border);box-shadow:var(--shadow);transition:.2s}
+.step:hover{border-color:var(--primary);transform:translateY(-3px)}
+.step-num{width:26px;height:26px;background:linear-gradient(135deg,var(--primary),#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:800;color:#fff;margin:0 auto 9px}
+.step-icon{font-size:1.7rem;margin-bottom:9px}
+.step h4{font-size:.84rem;color:var(--text);margin-bottom:4px;font-weight:700}
+.step p{font-size:.74rem;color:var(--muted);line-height:1.5}
+.home-footer{background:var(--text);color:rgba(255,255,255,.7);padding:30px 20px;text-align:center}
+.home-footer p{font-size:.82rem;line-height:2}
+.home-footer .ids{color:var(--accent);font-size:.78rem;margin-top:4px;font-family:monospace}
+.gallery-topbar{max-width:1200px;margin:0 auto;padding:22px 20px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.gallery-search{flex:1;min-width:180px;padding:10px 16px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:.87rem;outline:none;transition:.2s;box-shadow:var(--shadow)}
+.gallery-search:focus{border-color:var(--primary)}
+.gallery-sort{padding:10px 14px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:.87rem;outline:none;cursor:pointer;box-shadow:var(--shadow)}
+.grp-tabs{max-width:1200px;margin:0 auto;padding:0 20px 18px;display:flex;gap:7px;flex-wrap:wrap}
+.grp-tab{padding:7px 16px;border-radius:20px;font-size:.78rem;font-weight:700;cursor:pointer;border:2px solid var(--border);background:var(--card);color:var(--muted);transition:.2s}
+.grp-tab:hover{border-color:var(--primary);color:var(--primary)}
+.grp-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.grp-section-banner{display:flex;align-items:center;gap:16px;padding:18px 22px;background:var(--card);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:18px;box-shadow:var(--shadow);flex-wrap:wrap}
+.grp-banner-photo{width:62px;height:62px;border-radius:50%;object-fit:cover;border:3px solid var(--border);flex-shrink:0}
+.grp-banner-info h3{font-size:1rem;font-weight:800;color:var(--text);margin-bottom:3px}
+.grp-banner-info p{font-size:.78rem;color:var(--muted)}
+.grp-banner-info .bid{font-size:.74rem;color:var(--primary);font-family:monospace;font-weight:700;background:var(--primary-light);padding:2px 9px;border-radius:8px;display:inline-block;margin-top:4px}
+.persons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:13px}
+.person-card{background:var(--card);border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;border:1px solid var(--border);box-shadow:var(--shadow);transition:.25s}
+.person-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg);border-color:var(--primary)}
+.person-thumb{width:100%;height:152px;object-fit:cover;transition:transform .35s}
+.person-card:hover .person-thumb{transform:scale(1.06)}
+.person-info{padding:10px 12px}
+.person-info h4{font-size:.83rem;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person-meta{color:var(--muted);font-size:.71rem;margin-top:2px}
+.rating-modal{position:fixed;inset:0;background:rgba(15,15,30,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:500;padding:16px;opacity:0;transition:opacity .25s}
+.rating-modal.show{opacity:1}
+.rating-modal.hidden{display:none}
+.rating-modal-box{background:var(--card);border-radius:22px;max-width:520px;width:100%;position:relative;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.25);transform:scale(.94);transition:transform .28s}
+.rating-modal.show .rating-modal-box{transform:scale(1)}
+.modal-close{position:absolute;top:12px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--bg);border:1px solid var(--border);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;z-index:2;transition:.2s}
+.modal-close:hover{background:var(--danger-light);color:var(--danger)}
+.modal-progress{padding:16px 22px 0;display:flex;align-items:center;justify-content:space-between}
+.progress-label{font-size:.8rem;font-weight:700;color:var(--muted)}
+.progress-bar-wrap{flex:1;height:6px;background:var(--border);border-radius:3px;margin:0 12px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:3px;transition:width .4s ease}
+.modal-photo-wrap{position:relative;height:300px;overflow:hidden;background:#000}
+.modal-photo{width:100%;height:100%;object-fit:cover;transition:opacity .35s,transform .35s}
+.modal-photo.fade-out{opacity:0;transform:translateX(-30px)}
+.modal-photo.fade-in{opacity:0;transform:translateX(30px)}
+.modal-body{padding:20px 22px}
+.modal-person-name{font-size:1.05rem;font-weight:800;margin-bottom:3px}
+.modal-subtitle{font-size:.78rem;color:var(--muted);margin-bottom:16px}
+.modal-stars{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.modal-stars span{font-size:2.4rem;cursor:pointer;color:#d1d5db;transition:color .15s,transform .15s;user-select:none}
+.modal-stars span.lit{color:var(--accent)}
+.modal-stars span:hover{transform:scale(1.2)}
+.modal-rated-badge{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:var(--secondary-light);border-radius:10px;color:#065f46;font-size:.84rem;font-weight:700;margin-bottom:14px}
+.modal-avg{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:14px}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.modal-nav-btns{display:flex;gap:8px}
+.modal-nav-btn{flex:1;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:.84rem;font-weight:700;cursor:pointer;transition:.2s}
+.modal-nav-btn:hover{border-color:var(--primary);color:var(--primary)}
+.modal-nav-btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.modal-nav-btn.primary:hover{background:var(--primary-dark)}
+.all-rated-msg{text-align:center;padding:26px 20px;display:none}
+.all-rated-msg .icon{font-size:3rem;margin-bottom:10px}
+.all-rated-msg h3{font-size:1.1rem;font-weight:800;margin-bottom:6px}
+.all-rated-msg p{color:var(--muted);font-size:.84rem;margin-bottom:16px}
+.admin-wrap{max-width:1200px;margin:0 auto;padding:26px 20px 60px}
+.admin-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px}
+.admin-header-left h2{font-size:1.4rem;font-weight:900}
+.admin-header-left p{font-size:.8rem;color:var(--muted);margin-top:3px}
+.admin-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px;background:var(--card);padding:8px;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.admin-tab{padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-size:.82rem;font-weight:700;background:transparent;color:var(--muted);transition:.2s;display:flex;align-items:center;gap:6px}
+.admin-tab:hover{background:var(--primary-light);color:var(--primary)}
+.admin-tab.active{background:var(--primary);color:#fff;box-shadow:0 3px 10px rgba(79,70,229,.3)}
+.admin-tab-badge{background:rgba(255,255,255,.25);padding:1px 7px;border-radius:10px;font-size:.7rem}
+.admin-tab:not(.active) .admin-tab-badge{background:var(--border);color:var(--muted)}
+.admin-section{display:none}.admin-section.active{display:block}
+.admin-stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:22px}
+.admin-stat-card{background:var(--card);border-radius:var(--radius-sm);padding:18px 16px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;transition:.2s}
+.admin-stat-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+.admin-stat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.stat-blue .admin-stat-icon{background:#dbeafe}.stat-green .admin-stat-icon{background:var(--secondary-light)}.stat-purple .admin-stat-icon{background:var(--primary-light)}.stat-orange .admin-stat-icon{background:var(--accent-light)}.stat-red .admin-stat-icon{background:var(--danger-light)}
+.admin-stat-info .val{font-size:1.5rem;font-weight:900}.admin-stat-info .key{font-size:.72rem;color:var(--muted);margin-top:2px}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:700px){.chart-row{grid-template-columns:1fr}}
+.chart-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.chart-card h4{font-size:.88rem;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bar-label{width:100px;font-size:.75rem;color:var(--muted);text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:10px;background:var(--bg);border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;transition:width .6s ease}
+.bar-val{width:36px;font-size:.74rem;font-weight:700;text-align:right;flex-shrink:0}
+.star-dist-row{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.star-dist-label{width:24px;font-size:.78rem;color:var(--accent);font-weight:700}
+.star-dist-bar{flex:1;height:10px;background:var(--bg);border-radius:5px;overflow:hidden}
+.star-dist-fill{height:100%;background:linear-gradient(90deg,var(--accent),#f97316);border-radius:5px}
+.star-dist-count{width:32px;font-size:.73rem;color:var(--muted);text-align:right}
+.panel-card{background:var(--card);border-radius:var(--radius);padding:22px;margin-bottom:18px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.panel-card h3{margin-bottom:14px;color:var(--text);font-size:.93rem;font-weight:800;border-bottom:2px solid var(--border);padding-bottom:9px;display:flex;align-items:center;gap:8px}
+.form-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:11px}
+.form-row input,.form-row select{flex:1;min-width:140px;padding:9px 13px;border-radius:10px;background:var(--bg);border:2px solid var(--border);color:var(--text);font-size:.86rem;outline:none;transition:.2s}
+.form-row input:focus,.form-row select:focus{border-color:var(--primary)}
+.btn{padding:9px 20px;border-radius:10px;border:none;cursor:pointer;font-size:.84rem;font-weight:700;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px)}
+.btn-green{background:var(--secondary);color:#fff}.btn-green:hover{opacity:.88}
+.btn-excel{background:#1D6F42;color:#fff}.btn-excel:hover{opacity:.88}
+.btn-del{background:var(--danger-light);color:var(--danger);padding:5px 11px;font-size:.74rem;border-radius:7px;border:1px solid #fca5a5;cursor:pointer;font-weight:700}.btn-del:hover{background:var(--danger);color:#fff}
+.btn-edit{background:var(--primary-light);color:var(--primary);padding:5px 11px;font-size:.74rem;border-radius:7px;border:1px solid #c7d2fe;cursor:pointer;font-weight:700}.btn-edit:hover{background:var(--primary);color:#fff}
+.btn-warn{background:var(--accent-light);color:#92400e;padding:5px 11px;font-size:.74rem;border-radius:7px;border:1px solid #fde68a;cursor:pointer;font-weight:700}.btn-warn:hover{background:var(--accent);color:#fff}
+.p-list-item{display:flex;align-items:center;gap:11px;padding:10px;background:var(--bg);border-radius:10px;margin-bottom:7px;border:1px solid var(--border)}
+.p-list-item img{width:38px;height:38px;border-radius:8px;object-fit:cover}
+.p-list-item .nm{flex:1;font-size:.86rem;font-weight:700}.p-list-item .tg{font-size:.7rem;color:var(--muted)}
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;position:relative;background:var(--bg)}
+.upload-zone:hover{border-color:var(--primary);background:var(--primary-light)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-zone p{color:var(--muted);font-size:.84rem}
+.preview-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;justify-content:center}
+.preview-row img{width:55px;height:55px;object-fit:cover;border-radius:7px;border:2px solid var(--primary)}
+.role-admin{background:#fef3c7;color:#92400e;padding:2px 9px;border-radius:10px;font-size:.7rem;font-weight:700}
+.role-user{background:var(--secondary-light);color:#065f46;padding:2px 9px;border-radius:10px;font-size:.7rem;font-weight:700}
+.data-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.data-table th{background:var(--bg);padding:10px 12px;text-align:left;font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border)}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:hover td{background:var(--primary-light)}
+.data-table tr:last-child td{border-bottom:none}
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.act-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.act-text{flex:1;font-size:.8rem;line-height:1.5}
+.act-time{font-size:.7rem;color:var(--muted);flex-shrink:0;margin-top:2px}
+.admin-search{padding:8px 14px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:.84rem;outline:none;width:220px;transition:.2s}
+.admin-search:focus{border-color:var(--primary)}
+.lb-item{display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg);border-radius:10px;margin-bottom:7px;border:1px solid var(--border);transition:.15s}
+.lb-item:hover{border-color:var(--primary)}
+.lb-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;flex-shrink:0}
+.lb-rank.gold{background:#fef3c7;color:#92400e}.lb-rank.silver{background:#f1f5f9;color:#475569}.lb-rank.bronze{background:#fce7f3;color:#9d174d}.lb-rank.other{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+.lb-thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.lb-info{flex:1}.lb-name{font-size:.84rem;font-weight:700}.lb-sub{font-size:.7rem;color:var(--muted)}
+.lb-stars{font-size:.78rem;color:var(--accent);font-weight:700}
+/* ===== WHO RATED MODAL ===== */
+.who-rated-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:700;padding:16px}
+.who-rated-modal.show{display:flex}
+.who-rated-box{background:var(--card);border-radius:22px;max-width:580px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.25);padding:28px}
+.who-rated-box h3{font-size:1rem;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.who-rated-box .sub{font-size:.76rem;color:var(--muted);margin-bottom:18px}
+.voter-item{display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg);border-radius:10px;margin-bottom:7px;border:1px solid var(--border)}
+.voter-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:800;flex-shrink:0}
+.voter-info{flex:1}
+.voter-name{font-size:.84rem;font-weight:700}
+.voter-id{font-size:.7rem;color:var(--muted);font-family:monospace}
+.voter-stars{color:var(--accent);font-size:.82rem;font-weight:700}
+.voter-time{font-size:.7rem;color:var(--muted)}
+/* ===== ACCESS DENIED ===== */
+.access-denied{position:fixed;inset:0;background:linear-gradient(135deg,#fee2e2,#fecaca);display:flex;align-items:center;justify-content:center;z-index:1200;padding:20px}
+.access-denied.hidden{display:none}
+.access-denied-box{background:var(--card);border-radius:24px;padding:44px 38px;max-width:400px;width:100%;text-align:center;box-shadow:0 25px 60px rgba(239,68,68,.2);border:2px solid #fca5a5}
+.access-denied-icon{font-size:4rem;margin-bottom:16px}
+.access-denied-box h2{font-size:1.4rem;font-weight:900;color:var(--danger);margin-bottom:8px}
+.access-denied-box p{color:var(--muted);font-size:.87rem;line-height:1.7;margin-bottom:22px}
+.access-denied-box button{padding:11px 28px;border-radius:10px;background:var(--danger);color:#fff;font-weight:800;border:none;cursor:pointer;font-size:.9rem;transition:.2s}
+/* Change Admin Password Card */
+.change-pw-card{background:linear-gradient(135deg,var(--accent-light),#fef9c3);border:2px solid var(--accent);border-radius:var(--radius);padding:22px;margin-bottom:18px}
+.change-pw-card h3{color:#92400e;font-size:.93rem;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--text);color:#fff;padding:13px 18px;border-radius:12px;font-size:.84rem;z-index:9999;border-left:4px solid var(--secondary);animation:slideIn .3s ease;max-width:300px;box-shadow:0 8px 25px rgba(0,0,0,.2);display:flex;align-items:center;gap:9px}
+.toast.error{border-left-color:var(--danger)}.toast.warn{border-left-color:var(--accent)}
+@keyframes slideIn{from{transform:translateX(130%)}to{transform:translateX(0)}}
+.overlay-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay-modal.show{display:flex}
+.overlay-modal-box{background:var(--card);border-radius:20px;padding:28px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.overlay-modal-box h3{font-size:1rem;font-weight:800;margin-bottom:16px}
+.confirm-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;display:none;align-items:center;justify-content:center;padding:20px}
+.confirm-modal.show{display:flex}
+.confirm-box{background:var(--card);border-radius:20px;padding:30px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.confirm-box .icon{font-size:2.8rem;margin-bottom:12px}
+.confirm-box h3{font-size:1rem;font-weight:800;margin-bottom:8px}
+.confirm-box p{color:var(--muted);font-size:.82rem;margin-bottom:20px;line-height:1.6}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btns button{flex:1;padding:10px;border-radius:10px;border:none;cursor:pointer;font-weight:700;font-size:.85rem}
+@media(max-width:640px){
+  .hero h1{font-size:1.8rem}.team-grid{grid-template-columns:repeat(2,1fr)}
+  .persons-grid{grid-template-columns:repeat(2,1fr)}.steps-grid{grid-template-columns:repeat(2,1fr)}
+  .modal-photo-wrap{height:220px}.modal-stars span{font-size:1.9rem}
+  .admin-stats-row{grid-template-columns:repeat(2,1fr)}
+  .hero-admin-btn span.btn-label{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="access-denied hidden" id="accessDeniedScreen">
+  <div class="access-denied-box">
+    <div class="access-denied-icon">🚫</div>
+    <h2>Access Denied</h2>
+    <p>You don't have permission to access the Admin Panel.<br/>This area is restricted to <strong>Admin users only</strong>.</p>
+    <button onclick="hideAccessDenied()">← Go Back to Home</button>
+  </div>
+</div>
+
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-logo">⭐</div>
+    <h2>Face Rating Gallery</h2>
+    <p class="auth-sub">Sign in with your <strong>Student ID</strong> and <strong>PIN</strong> to continue</p>
+    <div class="input-group">
+      <label>Student ID</label>
+      <span class="input-icon">🎓</span>
+      <input type="text" id="loginId" placeholder="252-15-422" maxlength="14" oninput="formatStudentId(this)" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <div class="input-group">
+      <label>PIN / Password</label>
+      <span class="input-icon">🔐</span>
+      <input type="password" id="loginPw" placeholder="Enter your PIN" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <div class="auth-err" id="loginErr"></div>
+    <button class="auth-btn" onclick="doLogin()"><span id="loginBtnText">🚀 Sign In</span></button>
+    <!-- QUICK ADMIN BUTTON -->
+    <button class="quick-admin-btn" onclick="quickAdminLogin()">⚡ Quick Admin Login</button>
+    <div class="pin-hint">
+      <strong>📌 Format:</strong> Student ID → <span class="format-badge">252-15-XXX</span><br/>
+      Default PIN = last 4 digits of your Student ID.<br/>
+      <strong>Admin:</strong> ID <span class="format-badge">admin</span> · PIN <span class="format-badge">admin123</span>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo" onclick="showPage('home')">
+      <div class="nav-logo-icon">⭐</div>
+      <div class="nav-logo-text">FaceRating</div>
+    </div>
+    <div class="nav-links">
+      <a onclick="showPage('home')" id="nl-home" class="active-nav">🏠 Home</a>
+      <a onclick="showPage('gallery')" id="nl-gallery">🖼 Gallery</a>
+      <a onclick="showPage('admin')" id="nl-admin" style="display:none">🛠 Admin</a>
+    </div>
+    <div class="nav-right">
+      <div class="user-chip" id="userChip">👤 Guest</div>
+      <button class="btn-sm btn-logout" onclick="doLogout()">🚪 Logout</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <button class="hero-admin-btn" onclick="handleAdminBtnClick()">⚙️ <span class="btn-label">Admin Panel</span></button>
+    <div class="hero-badge">🎓 Academic Group Project · CSE Dept</div>
+    <h1>Human Face<br/><em>Rating Gallery</em></h1>
+    <p>4 groups · 20 persons each · 5 photos/person · 400 total photos with live star ratings</p>
+    <button class="hero-btn" onclick="showPage('gallery')">🚀 Browse Gallery</button>
+    <div class="hero-stats">
+      <div class="stat-box"><div class="num">4</div><div class="lbl">Groups</div></div>
+      <div class="stat-box"><div class="num">20</div><div class="lbl">Persons/Group</div></div>
+      <div class="stat-box"><div class="num">100</div><div class="lbl">Photos/Group</div></div>
+      <div class="stat-box"><div class="num">400</div><div class="lbl">Total Photos</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title"><h2>📐 Project Structure</h2><p>How it's organized</p><div class="line"></div></div>
+    <div class="structure-grid">
+      <div class="struct-card"><div class="struct-icon-wrap">👥</div><h3>4 Group Members</h3><p>Each member manages 20 persons with full photo galleries</p></div>
+      <div class="struct-card"><div class="struct-icon-wrap">🧑</div><h3>20 Persons/Group</h3><p>Every group member manages 20 individual person profiles</p></div>
+      <div class="struct-card"><div class="struct-icon-wrap">📸</div><h3>5 Photos/Person</h3><p>Each profile has 5 photos with hover-zoom gallery</p></div>
+      <div class="struct-card"><div class="struct-icon-wrap">⭐</div><h3>Auto-Next Rating</h3><p>Rate a photo and auto-advance to the next with animation</p></div>
+    </div>
+    <div class="section-title" style="margin-top:48px"><h2>✨ Features</h2><p>Everything built in</p><div class="line"></div></div>
+    <div class="features-grid">
+      <div class="feat-item"><div class="feat-icon">🔄</div><div class="feat-text"><h4>Auto Next Photo</h4><p>After rating, auto-slides to next photo smoothly</p></div></div>
+      <div class="feat-item"><div class="feat-icon">📊</div><div class="feat-text"><h4>Excel Export</h4><p>Download all ratings as .xlsx from Admin Panel</p></div></div>
+      <div class="feat-item"><div class="feat-icon">🔐</div><div class="feat-text"><h4>Student ID Login</h4><p>Login with Student ID + PIN</p></div></div>
+      <div class="feat-item"><div class="feat-icon">👤</div><div class="feat-text"><h4>Role-Based Access</h4><p>Admin vs User roles with protected panel</p></div></div>
+      <div class="feat-item"><div class="feat-icon">🛡</div><div class="feat-text"><h4>Secure Voting</h4><p>Account-based duplicate vote prevention</p></div></div>
+      <div class="feat-item"><div class="feat-icon">📈</div><div class="feat-text"><h4>Progress Indicator</h4><p>Photo 2/5 progress bar in rating modal</p></div></div>
+      <div class="feat-item"><div class="feat-icon">👁</div><div class="feat-text"><h4>Who Rated</h4><p>See exactly who rated each person's photos</p></div></div>
+      <div class="feat-item"><div class="feat-icon">📱</div><div class="feat-text"><h4>Fully Responsive</h4><p>Perfect on mobile, tablet and desktop</p></div></div>
+    </div>
+  </div>
+  <div class="section" style="padding-top:0;background:var(--primary-light)">
+    <div class="section-title"><h2>🧭 Navigation Flow</h2><p>Login → Home → Gallery → Rate</p><div class="line"></div></div>
+    <div class="steps-grid">
+      <div class="step"><div class="step-num">1</div><div class="step-icon">🔐</div><h4>Login</h4><p>Student ID + PIN</p></div>
+      <div class="step"><div class="step-num">2</div><div class="step-icon">🏠</div><h4>Home</h4><p>Project info and group members</p></div>
+      <div class="step"><div class="step-num">3</div><div class="step-icon">👥</div><h4>Gallery</h4><p>Browse 4 groups × 20 persons</p></div>
+      <div class="step"><div class="step-num">4</div><div class="step-icon">⭐</div><h4>Rate</h4><p>Auto-next photos with progress bar</p></div>
+    </div>
+  </div>
+  <div class="section" style="padding-top:44px">
+    <div class="section-title"><h2>👥 Group Members</h2><p>Click a card to view their group</p><div class="line"></div></div>
+    <div class="team-grid" id="homeTeamGrid"></div>
+  </div>
+  <div class="home-footer">
+    <p>© 2025 Human Face Rating Gallery · Academic Group Project · Department of CSE</p>
+    <p class="ids">Md Abdullah Al Mahmud (252-15-422) · Shahin Faruque Rupom (252-15-464) · Md Rahat Hossain (252-15-404) · Raita Islam Prionty (252-15-416)</p>
+  </div>
+</div>
+
+<!-- GALLERY PAGE -->
+<div class="page" id="page-gallery">
+  <div class="gallery-topbar">
+    <input class="gallery-search" type="text" id="searchInput" placeholder="🔍 Search person..." oninput="filterPersons()"/>
+    <select class="gallery-sort" id="sortSel" onchange="filterPersons()">
+      <option value="default">Default Order</option>
+      <option value="rating">Highest Rated</option>
+      <option value="votes">Most Voted</option>
+    </select>
+  </div>
+  <div class="grp-tabs" id="grpTabs"></div>
+  <div style="max-width:1200px;margin:0 auto;padding:0 20px 40px" id="galleryContent"></div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div class="page" id="page-admin">
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <div class="admin-header-left"><h2>🛠 Admin Panel</h2><p>Full control over persons, photos, ratings & users</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-excel" onclick="exportToExcel()">📥 Export Excel</button>
+        <button class="btn" style="background:var(--accent);color:#fff" onclick="openWhoRatedAll()">👁 Who Rated</button>
+      </div>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchAdminTab('dashboard',this)">📊 Dashboard</button>
+      <button class="admin-tab" onclick="switchAdminTab('persons',this)">👤 Persons <span class="admin-tab-badge" id="badge-persons">0</span></button>
+      <button class="admin-tab" onclick="switchAdminTab('photos',this)">📸 Photos</button>
+      <button class="admin-tab" onclick="switchAdminTab('ratings',this)">⭐ Ratings <span class="admin-tab-badge" id="badge-ratings">0</span></button>
+      <button class="admin-tab" onclick="switchAdminTab('users',this)">👥 Users <span class="admin-tab-badge" id="badge-users">0</span></button>
+      <button class="admin-tab" onclick="switchAdminTab('activity',this)">📋 Activity</button>
+      <button class="admin-tab" onclick="switchAdminTab('settings',this)">⚙️ Settings</button>
+    </div>
+
+    <div class="admin-section active" id="as-dashboard">
+      <div class="admin-stats-row" id="dashStats"></div>
+      <div class="chart-row">
+        <div class="chart-card"><h4>📊 Ratings per Group</h4><div id="groupRatingChart"></div></div>
+        <div class="chart-card"><h4>⭐ Star Distribution</h4><div id="starDistChart"></div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-card"><h4>🏆 Top 10 Rated</h4><div id="topPersonsLb"></div></div>
+        <div class="chart-card"><h4>📉 Lowest Rated</h4><div id="lowPersonsLb"></div></div>
+      </div>
+    </div>
+
+    <div class="admin-section" id="as-persons">
+      <div class="panel-card">
+        <h3>➕ Add New Person</h3>
+        <div class="form-row">
+          <input type="text" id="newName" placeholder="Person name"/>
+          <input type="text" id="newDesc" placeholder="Description"/>
+          <select id="newGrp"><option value="">-- Assign Group --</option></select>
+        </div>
+        <button class="btn btn-primary" onclick="addPerson()">➕ Add Person</button>
+      </div>
+      <div class="panel-card">
+        <h3>👤 Manage Persons
+          <input class="admin-search" type="text" id="personSearch" placeholder="🔍 Filter..." oninput="renderPersonList()" style="margin-left:auto"/>
+        </h3>
+        <div id="adminPersonList"></div>
+      </div>
+    </div>
+
+    <div class="admin-section" id="as-photos">
+      <div class="panel-card">
+        <h3>📸 Upload Photos <span style="font-size:.72rem;color:var(--muted);font-weight:400">(max 5/person)</span></h3>
+        <div class="form-row"><select id="upPerson"><option value="">-- Select Person --</option></select></div>
+        <div class="upload-zone">
+          <input type="file" id="photoInput" accept="image/*" multiple onchange="previewPhotos()"/>
+          <p>📂 Click or drag images here (max 5)</p>
+          <div class="preview-row" id="previewRow"></div>
+        </div>
+        <br/><button class="btn btn-green" onclick="uploadPhotos()">⬆ Upload Photos</button>
+      </div>
+      <div class="panel-card"><h3>🖼 Photo Overview</h3><div id="photoOverview"></div></div>
+    </div>
+
+    <div class="admin-section" id="as-ratings">
+      <div class="panel-card">
+        <h3>⭐ All Ratings
+          <input class="admin-search" type="text" id="ratingSearch" placeholder="🔍 Filter..." oninput="renderRatingsList()" style="margin-left:auto"/>
+        </h3>
+        <div class="tbl-wrap">
+          <table class="data-table">
+            <thead><tr><th>Person</th><th>Group</th><th>Photo</th><th>Stars</th><th>Voter</th><th>Date</th><th>Who?</th><th>Action</th></tr></thead>
+            <tbody id="ratingsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel-card">
+        <h3>🗑 Bulk Actions</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-warn" onclick="clearSeedRatings()">🌱 Remove Seed Ratings</button>
+          <button class="btn" style="background:var(--danger-light);color:var(--danger)" onclick="confirmClearAll()">⚠ Clear All Ratings</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section" id="as-users">
+      <div class="panel-card">
+        <h3>👥 Registered Users
+          <input class="admin-search" type="text" id="userSearch" placeholder="🔍 Filter..." oninput="renderUsersList()" style="margin-left:auto"/>
+        </h3>
+        <div class="tbl-wrap">
+          <table class="data-table">
+            <thead><tr><th>#</th><th>Name</th><th>Student ID</th><th>Email</th><th>Role</th><th>Ratings</th><th>Actions</th></tr></thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section" id="as-activity">
+      <div class="panel-card">
+        <h3>📋 Activity Log
+          <button class="btn-del" onclick="activityLog=[];renderActivityLog();toast('Log cleared')" style="margin-left:auto">Clear</button>
+        </h3>
+        <div id="activityLogList"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="admin-section" id="as-settings">
+      <div class="change-pw-card">
+        <h3>🔑 Change Admin Password</h3>
+        <div class="form-row">
+          <input type="password" id="curPw" placeholder="Current password"/>
+          <input type="password" id="newPw" placeholder="New password (min 4 chars)"/>
+          <input type="password" id="confPw" placeholder="Confirm new password"/>
+        </div>
+        <button class="btn btn-primary" onclick="changeAdminPw()">💾 Update Password</button>
+      </div>
+      <div class="panel-card">
+        <h3>👤 Add New User Account</h3>
+        <div class="form-row">
+          <input type="text" id="regName" placeholder="Full name"/>
+          <input type="text" id="regSid" placeholder="Student ID (e.g. 252-15-999)" oninput="formatStudentId(this)"/>
+          <input type="password" id="regPin" placeholder="PIN (min 4 chars)"/>
+          <select id="regRole"><option value="user">User</option><option value="admin">Admin</option></select>
+        </div>
+        <button class="btn btn-green" onclick="registerUser()">➕ Create Account</button>
+      </div>
+      <div class="panel-card">
+        <h3>🗃 Data Management</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-excel" onclick="exportToExcel()">📥 Export Ratings Excel</button>
+          <button class="btn" style="background:#7c3aed;color:#fff" onclick="exportUsersExcel()">📥 Export Users Excel</button>
+          <button class="btn btn-warn" onclick="clearSeedRatings()">🌱 Remove Seed Ratings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RATING MODAL -->
+<div class="rating-modal hidden" id="ratingModal">
+  <div class="rating-modal-box">
+    <button class="modal-close" onclick="closeRatingModal()">✕</button>
+    <div class="modal-progress">
+      <span class="progress-label" id="progressLabel">Photo 1 / 5</span>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:20%"></div></div>
+      <span class="progress-label" id="progressPct">20%</span>
+    </div>
+    <div class="modal-photo-wrap"><img class="modal-photo" id="modalPhoto" src="" alt=""/></div>
+    <div class="modal-body">
+      <div class="modal-person-name" id="modalPersonName"></div>
+      <div class="modal-subtitle" id="modalSubtitle"></div>
+      <div class="spinner" id="ratingSpinner"></div>
+      <div id="ratingStarSection">
+        <div class="modal-stars" id="modalStars">
+          <span onclick="submitModalRating(1)" onmouseover="hoverModal(1)" onmouseout="unhoverModal()">★</span>
+          <span onclick="submitModalRating(2)" onmouseover="hoverModal(2)" onmouseout="unhoverModal()">★</span>
+          <span onclick="submitModalRating(3)" onmouseover="hoverModal(3)" onmouseout="unhoverModal()">★</span>
+          <span onclick="submitModalRating(4)" onmouseover="hoverModal(4)" onmouseout="unhoverModal()">★</span>
+          <span onclick="submitModalRating(5)" onmouseover="hoverModal(5)" onmouseout="unhoverModal()">★</span>
+        </div>
+        <div class="modal-avg" id="modalAvg"></div>
+      </div>
+      <div class="modal-rated-badge" id="modalRatedBadge" style="display:none">✅ You already rated this photo</div>
+      <div class="all-rated-msg" id="allRatedMsg">
+        <div class="icon">🎉</div><h3>All Photos Rated!</h3>
+        <p>You've rated all 5 photos for this person.</p>
+        <button class="btn btn-primary" onclick="closeRatingModal()">Done ✓</button>
+      </div>
+      <div class="modal-nav-btns" id="modalNavBtns">
+        <button class="modal-nav-btn" onclick="modalPrev()">← Prev</button>
+        <button class="modal-nav-btn primary" onclick="modalNext()" id="modalNextBtn">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WHO RATED MODAL -->
+<div class="who-rated-modal" id="whoRatedModal">
+  <div class="who-rated-box">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <h3 id="wrTitle">👁 Who Rated</h3>
+        <div class="sub" id="wrSub">All voters for this person</div>
+      </div>
+      <button onclick="closeWhoRated()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.8rem;font-weight:700">✕ Close</button>
+    </div>
+    <div id="wrContent"></div>
+  </div>
+</div>
+
+<!-- EDIT PERSON MODAL -->
+<div class="overlay-modal" id="editModal">
+  <div class="overlay-modal-box">
+    <h3>✏️ Edit Person</h3>
+    <input type="hidden" id="editPid"/>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <input type="text" id="editName" placeholder="Name" style="padding:9px 13px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:.86rem;outline:none"/>
+      <input type="text" id="editDesc" placeholder="Description" style="padding:9px 13px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:.86rem;outline:none"/>
+      <select id="editGrp" style="padding:9px 13px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:.86rem;outline:none"></select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" onclick="saveEditPerson()" style="flex:1">💾 Save</button>
+      <button class="btn" style="flex:1;background:var(--bg);border:2px solid var(--border)" onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-box">
+    <div class="icon" id="confirmIcon">⚠️</div>
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p id="confirmMsg">This action cannot be undone.</p>
+    <div class="confirm-btns">
+      <button style="background:var(--danger);color:#fff" onclick="confirmYes()">Yes, proceed</button>
+      <button style="background:var(--bg);border:2px solid var(--border);color:var(--text)" onclick="closeConfirm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const GROUPS=[
+  {id:'g1',name:'Md Abdullah Al Mahmud',sid:'252-15-422',color:'#22c55e',avatar:'A',role:'Project Lead & Developer'},
+  {id:'g2',name:'Shahin Faruque Rupom', sid:'252-15-464',color:'#4f46e5',avatar:'S',role:'Backend Developer'},
+  {id:'g3',name:'Md Rahat Hossain',     sid:'252-15-404',color:'#3b82f6',avatar:'R',role:'UI/UX Designer'},
+  {id:'g4',name:'Raita Islam Prionty',  sid:'252-15-416',color:'#9333ea',avatar:'R',role:'Database & Testing'},
+];
+const PNAMES=['Alex Carter','Jordan Lee','Sam Rivera','Chris Morgan','Taylor Kim','Morgan Blake','Casey Quinn','Riley Stone','Drew Park','Avery Hall','Skyler Brooks','Reese Nguyen','Jamie Cruz','Quinn Foster','Parker Diaz','Sage Bennett','Blake Turner','Rowan Collins','Finley Ward','Dakota Ross','Liam Scott','Emma White','Noah Green','Olivia Brown','Mason Clark','Ava Harris','Ethan Lewis','Mia Robinson','Lucas Walker','Amelia Hall','Harper Adams','Aiden Nelson','Evelyn Carter','Logan Mitchell','Abigail Perez','Elijah Roberts','Ella Turner','James Phillips','Sofia Campbell','Benjamin Evans','Charlotte Baker','Henry Gonzalez','Amelia Stewart','William Sanchez','Grace Morris','Jack Rogers','Chloe Reed','Owen Cook','Lily Morgan','Sebastian Rivera','Penelope Cooper','Henry Richardson','Layla Cox','Daniel Howard','Scarlett Ward','Matthew Torres','Victoria Peterson','Joseph Gray','Aria Ramirez','David James','Zoey Watson','Andrew Brooks','Nora Kelly','Joshua Sanders','Hannah Price','Ryan Bennett','Lily Wood','Nathan Barnes','Samantha Ross','Brandon Henderson','Allison Coleman','Tyler Jenkins','Kayla Perry','Nicholas Powell','Mackenzie Long'];
+const PAL=[['#4f46e5','#7c3aed'],['#3b82f6','#2563eb'],['#22c55e','#16a34a'],['#9333ea','#7c3aed'],['#f59e0b','#d97706'],['#14b8a6','#0d9488'],['#ef4444','#dc2626'],['#06b6d4','#0891b2'],['#8b5cf6','#7c3aed'],['#10b981','#059669'],['#f97316','#ea580c'],['#ec4899','#db2777'],['#6366f1','#4f46e5'],['#84cc16','#65a30d'],['#a855f7','#9333ea'],['#0ea5e9','#0284c7'],['#eab308','#ca8a04'],['#64748b','#475569'],['#f43f5e','#e11d48'],['#7c3aed','#6d28d9'],['#4f46e5','#3b82f6'],['#22c55e','#14b8a6'],['#9333ea','#ec4899'],['#f59e0b','#f97316'],['#3b82f6','#8b5cf6'],['#10b981','#22c55e'],['#ef4444','#f97316'],['#06b6d4','#3b82f6'],['#8b5cf6','#a855f7'],['#f59e0b','#eab308'],['#4f46e5','#6366f1'],['#22c55e','#84cc16'],['#9333ea','#8b5cf6'],['#14b8a6','#10b981'],['#ec4899','#f43f5e'],['#0ea5e9','#06b6d4'],['#a855f7','#7c3aed'],['#f97316','#f59e0b'],['#6366f1','#8b5cf6'],['#84cc16','#22c55e'],['#7c3aed','#9333ea'],['#0284c7','#0ea5e9'],['#ca8a04','#eab308'],['#475569','#64748b'],['#e11d48','#f43f5e'],['#6d28d9','#7c3aed'],['#3b82f6','#4f46e5'],['#14b8a6','#22c55e'],['#ec4899','#9333ea'],['#f97316','#f59e0b'],['#8b5cf6','#3b82f6'],['#22c55e','#10b981'],['#f97316','#ef4444'],['#3b82f6','#06b6d4'],['#a855f7','#8b5cf6'],['#eab308','#f59e0b'],['#6366f1','#4f46e5'],['#84cc16','#22c55e'],['#8b5cf6','#9333ea'],['#10b981','#14b8a6'],['#f43f5e','#ec4899'],['#06b6d4','#0ea5e9'],['#7c3aed','#a855f7'],['#f59e0b','#f97316'],['#9333ea','#6366f1'],['#14b8a6','#06b6d4'],['#22c55e','#84cc16'],['#3b82f6','#8b5cf6'],['#f97316','#eab308'],['#4f46e5','#a855f7'],['#10b981','#84cc16'],['#ef4444','#ec4899'],['#0ea5e9','#0284c7'],['#8b5cf6','#6366f1'],['#f59e0b','#84cc16']];
+const DB_KEY='face_v6';
+const SESSION_KEY='face_session';
+
+function hashPw(pw){let h=0;for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;}return 'h'+Math.abs(h).toString(36);}
+
+function initUsers(){
+  const raw=localStorage.getItem('face_users_v2');
+  if(raw) return JSON.parse(raw);
+  const u={};
+  GROUPS.forEach(g=>{const pin=g.sid.slice(-4);u[g.sid]={name:g.name,sid:g.sid,email:'',pw:hashPw(pin),role:'user',created:Date.now()};});
+  u['admin']={name:'Administrator',sid:'admin',email:'admin@face.com',pw:hashPw('admin123'),role:'admin',created:Date.now()};
+  localStorage.setItem('face_users_v2',JSON.stringify(u));
+  return u;
+}
+function saveUsers(u){localStorage.setItem('face_users_v2',JSON.stringify(u));}
+let users=initUsers();
+
+function saveSession(user){const s={sid:user.sid,name:user.name,role:user.role,ts:Date.now()};sessionStorage.setItem(SESSION_KEY,JSON.stringify(s));localStorage.setItem(SESSION_KEY,JSON.stringify(s));}
+function loadSession(){const raw=sessionStorage.getItem(SESSION_KEY)||localStorage.getItem(SESSION_KEY);if(!raw) return null;try{return JSON.parse(raw);}catch{return null;}}
+function clearSession(){sessionStorage.removeItem(SESSION_KEY);localStorage.removeItem(SESSION_KEY);}
+
+let currentUser=null,activityLog=[],rateLimit={};
+function checkRateLimit(uid){const now=Date.now();const key=uid||'anon';if(!rateLimit[key])rateLimit[key]=[];rateLimit[key]=rateLimit[key].filter(t=>now-t<10000);if(rateLimit[key].length>=5)return false;rateLimit[key].push(now);return true;}
+
+function makeSVG(c1,c2,init,lbl,n){return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='${encodeURIComponent(c1)}'/><stop offset='100%25' stop-color='${encodeURIComponent(c2)}'/></linearGradient></defs><rect width='400' height='400' fill='url(%23g)'/><circle cx='200' cy='155' r='75' fill='rgba(255,255,255,0.2)'/><ellipse cx='200' cy='318' rx='108' ry='70' fill='rgba(255,255,255,0.14)'/><text x='200' y='178' text-anchor='middle' font-family='Segoe UI' font-size='55' font-weight='bold' fill='rgba(255,255,255,0.95)'>${init}</text><text x='200' y='378' text-anchor='middle' font-family='Segoe UI' font-size='18' fill='rgba(255,255,255,0.7)'>${encodeURIComponent(lbl)} %C2%B7 Photo ${n}</text></svg>`;}
+function makeAvatarSVG(c1,c2,init){return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='${encodeURIComponent(c1)}'/><stop offset='100%25' stop-color='${encodeURIComponent(c2)}'/></linearGradient></defs><circle cx='100' cy='100' r='100' fill='url(%23g)'/><text x='100' y='120' text-anchor='middle' font-family='Segoe UI' font-size='70' font-weight='bold' fill='rgba(255,255,255,0.95)'>${init}</text></svg>`;}
+
+function initDB(){
+  const raw=localStorage.getItem(DB_KEY);if(raw) return JSON.parse(raw);
+  const db={persons:[],photos:[],ratings:[],npid:1,nphid:1,nrid:1};let ni=0;
+  GROUPS.forEach((g,gi)=>{
+    for(let pi=0;pi<20;pi++){
+      const pid=db.npid++;const name=PNAMES[ni]||`Person ${pi+1}`;ni++;
+      db.persons.push({id:pid,name,description:'Participant',group_id:g.id});
+      const [c1,c2]=PAL[(gi*20+pi)%PAL.length];const init=name.split(' ').map(w=>w[0]).join('').substr(0,2);
+      for(let ph=1;ph<=5;ph++){
+        const phid=db.nphid++;
+        db.photos.push({id:phid,person_id:pid,url:makeSVG(c1,c2,init,name,ph),order:ph});
+        for(let v=0;v<Math.floor(Math.random()*5+2);v++)
+          db.ratings.push({id:db.nrid++,photo_id:phid,stars:Math.floor(Math.random()*3)+3,voter:'seed_'+v,voter_name:'Demo',ts:Date.now()-(v*3600000)});
+      }
+    }
+  });
+  saveDB(db);return db;
+}
+function saveDB(d){localStorage.setItem(DB_KEY,JSON.stringify(d));}
+let db=initDB();
+
+function pRatings(phid){return db.ratings.filter(r=>r.photo_id===phid);}
+function pPhotos(pid){return db.photos.filter(p=>p.person_id===pid).sort((a,b)=>a.order-b.order);}
+function avgR(rs){return rs.length?rs.reduce((a,r)=>a+r.stars,0)/rs.length:0;}
+function personAvg(pid){const ph=pPhotos(pid);return ph.length?ph.map(p=>avgR(pRatings(p.id))).reduce((a,b)=>a+b,0)/ph.length:0;}
+function totalV(pid){return pPhotos(pid).reduce((a,p)=>a+pRatings(p.id).length,0);}
+function hasVoted(phid){if(!currentUser)return false;return db.ratings.some(r=>r.photo_id===phid&&r.voter===currentUser.sid);}
+function starsHtml(r,sz='1rem'){const f=Math.round(r);return `<span style="color:var(--accent);font-size:${sz}">${'★'.repeat(f)}${'☆'.repeat(5-f)}</span>`;}
+function getGrp(gid){return GROUPS.find(g=>g.id===gid)||GROUPS[0];}
+function sanitize(s){return String(s).replace(/[<>"'&]/g,'');}
+function timeAgo(ts){const d=Date.now()-ts;if(d<60000)return 'just now';if(d<3600000)return Math.floor(d/60000)+'m ago';if(d<86400000)return Math.floor(d/3600000)+'h ago';return Math.floor(d/86400000)+'d ago';}
+function logActivity(msg,type='info'){activityLog.unshift({msg,type,ts:Date.now()});if(activityLog.length>100)activityLog.pop();}
+
+function toast(msg,type=''){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t=document.createElement('div');t.className='toast'+(type?' '+type:'');
+  const icons={error:'❌',warn:'⚠️','':`✅`};
+  t.innerHTML=`<span>${icons[type]||'✅'}</span><span>${msg}</span>`;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),3500);
+}
+
+function formatStudentId(el){
+  if(el.value==='admin') return;
+  let v=el.value.replace(/[^0-9]/g,'');
+  if(v.length>3&&v.length<=5) v=v.slice(0,3)+'-'+v.slice(3);
+  else if(v.length>5) v=v.slice(0,3)+'-'+v.slice(3,5)+'-'+v.slice(5,8);
+  el.value=v;
+}
+
+// ===== QUICK ADMIN LOGIN =====
+function quickAdminLogin(){
+  // Always reset admin to default first (ensures access)
+  users['admin'].pw=hashPw('admin123');
+  saveUsers(users);
+  loginSuccess(users['admin']);
+  toast('🛠 Quick Admin Login!');
+}
+
+function doLogin(){
+  const rawId=document.getElementById('loginId').value.trim();
+  const pw=document.getElementById('loginPw').value;
+  const err=document.getElementById('loginErr');
+  const btn=document.getElementById('loginBtnText');
+  err.style.display='none';
+  if(!rawId){err.textContent='❌ Please enter your Student ID.';err.style.display='block';return;}
+  if(!pw){err.textContent='❌ Please enter your PIN.';err.style.display='block';return;}
+  if(rawId!=='admin'&&!/^\d{3}-\d{2}-\d{3,4}$/.test(rawId)){err.textContent='❌ Invalid ID format. Use: 252-15-422';err.style.display='block';return;}
+  btn.textContent='⏳ Signing in...';
+  setTimeout(()=>{
+    btn.textContent='🚀 Sign In';
+    const user=users[rawId];
+    if(!user||user.pw!==hashPw(pw)){err.textContent='❌ Incorrect Student ID or PIN.';err.style.display='block';return;}
+    loginSuccess(user);
+  },600);
+}
+
+function loginSuccess(user){
+  currentUser=user;saveSession(user);
+  document.getElementById('authOverlay').classList.add('hidden');
+  updateNavUser();
+  logActivity(`Login: ${user.name} (${user.sid}) — role: ${user.role}`,'login');
+  if(user.role==='admin'){
+    toast(`🛠 Welcome, Admin ${user.name.split(' ')[0]}!`);
+    document.getElementById('nl-admin').style.display='';
+    showPage('admin');
+  } else {
+    toast(`👋 Welcome, ${user.name.split(' ')[0]}!`);
+    showPage('home');
+  }
+}
+
+function doLogout(){
+  if(currentUser)logActivity(`Logout: ${currentUser.name}`,'logout');
+  currentUser=null;clearSession();
+  document.getElementById('loginId').value='';document.getElementById('loginPw').value='';
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('nl-admin').style.display='none';
+  document.getElementById('authOverlay').classList.remove('hidden');
+  updateNavUser();toast('👋 Logged out successfully.');
+}
+
+function updateNavUser(){
+  if(!currentUser){document.getElementById('userChip').textContent='👤 Guest';return;}
+  const roleTag=`<span class="${currentUser.role==='admin'?'role-admin':'role-user'}">${currentUser.role}</span>`;
+  document.getElementById('userChip').innerHTML=`${roleTag} ${currentUser.name.split(' ')[0]}`;
+}
+
+function handleAdminBtnClick(){
+  if(!currentUser){toast('Please login first.','warn');return;}
+  if(currentUser.role==='admin') showPage('admin');
+  else{document.getElementById('accessDeniedScreen').classList.remove('hidden');logActivity(`Access denied: ${currentUser.name}`,'warn');}
+}
+function hideAccessDenied(){document.getElementById('accessDeniedScreen').classList.add('hidden');}
+
+let activePage='home',activeGrp='all';
+function showPage(pg){
+  if(pg==='admin'&&(!currentUser||currentUser.role!=='admin')){document.getElementById('accessDeniedScreen').classList.remove('hidden');return;}
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+pg).classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active-nav'));
+  const nl=document.getElementById('nl-'+(pg==='person'?'gallery':pg));
+  if(nl)nl.classList.add('active-nav');
+  activePage=pg;
+  if(pg==='gallery')renderGallery();
+  if(pg==='admin')renderAdminPage();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderHomeTeam(){
+  document.getElementById('homeTeamGrid').innerHTML=GROUPS.map((g,i)=>{
+    const av=makeAvatarSVG(...PAL[i*5],g.avatar);
+    return `<div class="member-card">
+      ${i===0?'<div class="leader-badge">Leader</div>':''}
+      <div class="member-photo-wrap"><img class="member-photo" src="${av}" alt="${g.name}"/><div class="member-online-dot"></div></div>
+      <div class="member-name">${g.name}</div>
+      <div class="member-id">${g.sid}</div>
+      <div class="member-role">${g.role}</div>
+      <button class="go-btn" onclick="goToGroup('${g.id}')">View Group →</button>
+    </div>`;
+  }).join('');
+}
+
+function renderGrpTabs(){
+  document.getElementById('grpTabs').innerHTML=
+    `<button class="grp-tab active" onclick="setGrp('all',this)">🌐 All (80)</button>`+
+    GROUPS.map(g=>`<button class="grp-tab" onclick="setGrp('${g.id}',this)">${g.avatar} ${g.name.split(' ')[0]} (20)</button>`).join('');
+}
+let filteredP=[];
+function setGrp(gid,btn){activeGrp=gid;document.querySelectorAll('.grp-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filterPersons();}
+function filterPersons(){
+  const q=(document.getElementById('searchInput')||{}).value?.toLowerCase()||'';
+  const sort=(document.getElementById('sortSel')||{}).value||'default';
+  filteredP=db.persons.filter(p=>p.name.toLowerCase().includes(q)&&(activeGrp==='all'||p.group_id===activeGrp));
+  if(sort==='rating')filteredP.sort((a,b)=>personAvg(b.id)-personAvg(a.id));
+  else if(sort==='votes')filteredP.sort((a,b)=>totalV(b.id)-totalV(a.id));
+  renderGalleryContent();
+}
+function renderGallery(){renderGrpTabs();filterPersons();}
+function renderGalleryContent(){
+  const gc=document.getElementById('galleryContent');
+  if(!filteredP.length){gc.innerHTML='<div style="text-align:center;padding:50px;color:var(--muted)">No persons found</div>';return;}
+  if(activeGrp==='all'){
+    gc.innerHTML=GROUPS.map(g=>{
+      const gp=filteredP.filter(p=>p.group_id===g.id);if(!gp.length)return '';
+      const av=makeAvatarSVG(...PAL[GROUPS.indexOf(g)*5],g.avatar);
+      return `<div style="margin-bottom:38px">
+        <div class="grp-section-banner">
+          <img class="grp-banner-photo" src="${av}" alt="${g.name}"/>
+          <div class="grp-banner-info"><h3>${g.name}</h3><p>${g.role} · 20 persons · 100 photos</p><span class="bid">${g.sid}</span></div>
+        </div>
+        <div class="persons-grid">${gp.map(p=>personCardHtml(p)).join('')}</div>
+      </div>`;
+    }).join('');
+  } else {
+    const g=getGrp(activeGrp);const av=makeAvatarSVG(...PAL[GROUPS.indexOf(g)*5],g.avatar);
+    gc.innerHTML=`<div class="grp-section-banner" style="margin-bottom:22px">
+      <img class="grp-banner-photo" src="${av}" alt="${g.name}"/>
+      <div class="grp-banner-info"><h3>${g.name}</h3><p>${g.role} · 20 persons · 100 photos</p><span class="bid">${g.sid}</span></div>
+    </div><div class="persons-grid">${filteredP.map(p=>personCardHtml(p)).join('')}</div>`;
+  }
+}
+function personCardHtml(p){
+  const photos=pPhotos(p.id);const cover=photos[0]?photos[0].url:'';
+  const avg=personAvg(p.id);const votes=totalV(p.id);
+  const allRated=photos.length>0&&photos.every(ph=>hasVoted(ph.id));
+  const isAdmin=currentUser&&currentUser.role==='admin';
+  return `<div class="person-card" onclick="openRatingModal(${p.id})">
+    <img class="person-thumb" src="${cover}" alt="${p.name}" loading="lazy"/>
+    <div class="person-info">
+      ${allRated?'<div style="font-size:.68rem;color:#065f46;background:#dcfce7;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:4px;font-weight:700">✅ All Rated</div>':''}
+      <h4>${p.name}</h4>
+      <div style="color:var(--accent);font-size:.82rem">${starsHtml(avg,'0.82rem')}</div>
+      <div class="person-meta">⭐ ${avg.toFixed(1)} · 👥 ${votes}${isAdmin?` <span onclick="event.stopPropagation();openWhoRated(${p.id})" style="color:var(--primary);cursor:pointer;text-decoration:underline">👁 who?</span>`:''}</div>
+    </div>
+  </div>`;
+}
+function goToGroup(gid){
+  showPage('gallery');
+  setTimeout(()=>{activeGrp=gid;document.querySelectorAll('.grp-tab').forEach((b,i)=>{b.classList.remove('active');if(i>0&&GROUPS[i-1]&&GROUPS[i-1].id===gid)b.classList.add('active');});filterPersons();},80);
+}
+
+// ===== WHO RATED =====
+function openWhoRated(pid){
+  const p=db.persons.find(x=>x.id===pid);
+  document.getElementById('wrTitle').textContent=`👁 Who Rated: ${p.name}`;
+  document.getElementById('wrSub').textContent=`${getGrp(p.group_id).name.split(' ')[0]} · ${totalV(pid)} total votes`;
+  const photos=pPhotos(pid);
+  const voterMap={};
+  photos.forEach(ph=>{
+    pRatings(ph.id).forEach(r=>{
+      if(!voterMap[r.voter]) voterMap[r.voter]={name:r.voter_name||r.voter,id:r.voter,ratings:[]};
+      voterMap[r.voter].ratings.push({photo:ph.order,stars:r.stars,ts:r.ts});
+    });
+  });
+  const voters=Object.values(voterMap);
+  if(!voters.length){
+    document.getElementById('wrContent').innerHTML='<p style="color:var(--muted);padding:20px;text-align:center">No ratings yet for this person.</p>';
+  } else {
+    document.getElementById('wrContent').innerHTML=voters.map(v=>{
+      const avg=v.ratings.reduce((a,r)=>a+r.stars,0)/v.ratings.length;
+      const isSeed=v.id.startsWith('seed_');
+      return `<div class="voter-item">
+        <div class="voter-avatar">${v.name.charAt(0).toUpperCase()}</div>
+        <div class="voter-info">
+          <div class="voter-name">${sanitize(v.name)}${isSeed?'<span style="font-size:.65rem;background:#e5e7eb;padding:1px 6px;border-radius:8px;margin-left:6px">demo</span>':''}</div>
+          <div class="voter-id">${v.id} · Rated ${v.ratings.length} photo${v.ratings.length>1?'s':''} · Avg: ${avg.toFixed(1)}★</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${v.ratings.map(r=>`Photo ${r.photo}: ${'★'.repeat(r.stars)}`).join(' | ')}</div>
+        </div>
+        <div class="voter-stars">${avg.toFixed(1)}★</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('whoRatedModal').classList.add('show');
+}
+function openWhoRatedAll(){
+  document.getElementById('wrTitle').textContent=`👁 All Voters Summary`;
+  document.getElementById('wrSub').textContent=`Everyone who has submitted ratings`;
+  const voterMap={};
+  db.ratings.forEach(r=>{
+    if(!voterMap[r.voter]) voterMap[r.voter]={name:r.voter_name||r.voter,id:r.voter,count:0,total:0};
+    voterMap[r.voter].count++;voterMap[r.voter].total+=r.stars;
+  });
+  const voters=Object.values(voterMap).sort((a,b)=>b.count-a.count);
+  if(!voters.length){
+    document.getElementById('wrContent').innerHTML='<p style="color:var(--muted);padding:20px;text-align:center">No ratings yet.</p>';
+  } else {
+    document.getElementById('wrContent').innerHTML=voters.map((v,i)=>{
+      const avg=v.total/v.count;const isSeed=v.id.startsWith('seed_');
+      return `<div class="voter-item">
+        <div class="voter-avatar" style="background:linear-gradient(135deg,${PAL[i%PAL.length][0]},${PAL[i%PAL.length][1]})">${v.name.charAt(0).toUpperCase()}</div>
+        <div class="voter-info">
+          <div class="voter-name">${sanitize(v.name)}${isSeed?'<span style="font-size:.65rem;background:#e5e7eb;padding:1px 6px;border-radius:8px;margin-left:6px">demo</span>':''}</div>
+          <div class="voter-id">${v.id} · ${v.count} ratings submitted · Avg given: ${avg.toFixed(1)}★</div>
+        </div>
+        <div class="voter-stars">${v.count} votes</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('whoRatedModal').classList.add('show');
+}
+function closeWhoRated(){document.getElementById('whoRatedModal').classList.remove('show');}
+
+// ===== RATING MODAL =====
+let modalPersonId=null,modalPhotoIdx=0,modalPhotos=[];
+function openRatingModal(pid){
+  if(!currentUser){toast('Please login to rate photos.','warn');return;}
+  modalPersonId=pid;modalPhotos=pPhotos(pid);modalPhotoIdx=0;
+  const p=db.persons.find(x=>x.id===pid);
+  document.getElementById('modalPersonName').textContent=p.name;
+  showModalPhoto(0,true);
+  const modal=document.getElementById('ratingModal');
+  modal.classList.remove('hidden');requestAnimationFrame(()=>modal.classList.add('show'));
+}
+function showModalPhoto(idx,instant=false){
+  if(idx<0||idx>=modalPhotos.length)return;
+  modalPhotoIdx=idx;
+  const ph=modalPhotos[idx];const total=modalPhotos.length;
+  const pct=Math.round(((idx+1)/total)*100);
+  document.getElementById('progressLabel').textContent=`Photo ${idx+1} / ${total}`;
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressPct').textContent=pct+'%';
+  const img=document.getElementById('modalPhoto');
+  const rs=pRatings(ph.id);const avg=avgR(rs);
+  if(!instant){img.classList.add('fade-out');setTimeout(()=>{img.src=ph.url;img.classList.remove('fade-out');img.classList.add('fade-in');setTimeout(()=>img.classList.remove('fade-in'),350);},200);}
+  else img.src=ph.url;
+  document.getElementById('modalSubtitle').textContent=`⭐ Avg: ${avg.toFixed(1)} · 👥 ${rs.length} votes`;
+  document.getElementById('modalAvg').textContent=`Avg: ${avg.toFixed(2)} stars`;
+  const voted=hasVoted(ph.id);
+  document.getElementById('ratingStarSection').style.display=voted?'none':'';
+  document.getElementById('modalRatedBadge').style.display=voted?'flex':'none';
+  document.getElementById('allRatedMsg').style.display='none';
+  document.getElementById('modalNavBtns').style.display='';
+  document.getElementById('ratingSpinner').style.display='none';
+  document.getElementById('modalNextBtn').textContent=idx===total-1?'Finish ✓':'Next →';
+  document.querySelectorAll('#modalStars span').forEach(s=>s.classList.remove('lit'));
+}
+function hoverModal(n){document.querySelectorAll('#modalStars span').forEach((s,i)=>s.classList.toggle('lit',i<n));}
+function unhoverModal(){document.querySelectorAll('#modalStars span').forEach(s=>s.classList.remove('lit'));}
+function submitModalRating(stars){
+  if(!currentUser){toast('Login required','error');return;}
+  if(!checkRateLimit(currentUser.sid)){toast('⚠ Slow down!','warn');return;}
+  const ph=modalPhotos[modalPhotoIdx];
+  if(hasVoted(ph.id)){toast('Already voted','warn');advanceModal();return;}
+  document.getElementById('ratingSpinner').style.display='block';
+  document.getElementById('ratingStarSection').style.display='none';
+  setTimeout(()=>{
+    db.ratings.push({id:db.nrid++,photo_id:ph.id,stars,voter:currentUser.sid,voter_name:currentUser.name,ts:Date.now()});
+    saveDB(db);
+    const p=db.persons.find(x=>x.id===modalPersonId);
+    logActivity(`${currentUser.name} rated "${p?.name}" Photo ${ph.order}: ${stars}★`,'rating');
+    document.getElementById('ratingSpinner').style.display='none';
+    toast(`Rated ${stars} star${stars>1?'s':''}! ⭐`);
+    setTimeout(()=>advanceModal(),500);filterPersons();
+  },500);
+}
+function advanceModal(){
+  const nextIdx=modalPhotoIdx+1;
+  if(nextIdx>=modalPhotos.length){
+    const allDone=modalPhotos.every(ph=>hasVoted(ph.id));
+    if(allDone){
+      document.getElementById('allRatedMsg').style.display='block';
+      document.getElementById('modalNavBtns').style.display='none';
+      document.getElementById('ratingStarSection').style.display='none';
+      document.getElementById('modalRatedBadge').style.display='none';
+    } else showModalPhoto(0);
+  } else showModalPhoto(nextIdx);
+}
+function modalNext(){if(modalPhotoIdx>=modalPhotos.length-1)closeRatingModal();else showModalPhoto(modalPhotoIdx+1);}
+function modalPrev(){if(modalPhotoIdx>0)showModalPhoto(modalPhotoIdx-1);}
+function closeRatingModal(){const m=document.getElementById('ratingModal');m.classList.remove('show');setTimeout(()=>m.classList.add('hidden'),260);filterPersons();}
+
+// ===== ADMIN =====
+function renderAdminPage(){
+  if(!currentUser||currentUser.role!=='admin'){showPage('home');return;}
+  document.getElementById('badge-persons').textContent=db.persons.length;
+  document.getElementById('badge-ratings').textContent=db.ratings.length;
+  document.getElementById('badge-users').textContent=Object.keys(users).length;
+  const gSel=document.getElementById('newGrp');
+  gSel.innerHTML='<option value="">-- Group --</option>'+GROUPS.map(g=>`<option value="${g.id}">${g.name.split(' ')[0]}</option>`).join('');
+  const editGSel=document.getElementById('editGrp');
+  if(editGSel)editGSel.innerHTML=GROUPS.map(g=>`<option value="${g.id}">${g.name.split(' ')[0]}</option>`).join('');
+  document.getElementById('upPerson').innerHTML='<option value="">-- Person --</option>'+db.persons.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  renderDashboard();
+}
+function switchAdminTab(tab,btn){
+  document.querySelectorAll('.admin-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('as-'+tab).classList.add('active');
+  if(tab==='dashboard')renderDashboard();
+  else if(tab==='persons')renderPersonList();
+  else if(tab==='photos')renderPhotoOverview();
+  else if(tab==='ratings')renderRatingsList();
+  else if(tab==='users')renderUsersList();
+  else if(tab==='activity')renderActivityLog();
+}
+
+function renderDashboard(){
+  const totalR=db.ratings.length,totalP=db.persons.length,totalPh=db.photos.length,totalU=Object.keys(users).length;
+  const allAvg=totalR?db.ratings.reduce((a,r)=>a+r.stars,0)/totalR:0;
+  document.getElementById('dashStats').innerHTML=`
+    <div class="admin-stat-card stat-blue"><div class="admin-stat-icon">👤</div><div class="admin-stat-info"><div class="val">${totalP}</div><div class="key">Total Persons</div></div></div>
+    <div class="admin-stat-card stat-purple"><div class="admin-stat-icon">📸</div><div class="admin-stat-info"><div class="val">${totalPh}</div><div class="key">Total Photos</div></div></div>
+    <div class="admin-stat-card stat-orange"><div class="admin-stat-icon">⭐</div><div class="admin-stat-info"><div class="val">${totalR}</div><div class="key">Total Ratings</div></div></div>
+    <div class="admin-stat-card stat-green"><div class="admin-stat-icon">👥</div><div class="admin-stat-info"><div class="val">${totalU}</div><div class="key">Users</div></div></div>
+    <div class="admin-stat-card stat-red"><div class="admin-stat-icon">📊</div><div class="admin-stat-info"><div class="val">${allAvg.toFixed(2)}</div><div class="key">Avg Rating</div></div></div>
+  `;
+  const maxGR=Math.max(...GROUPS.map(g=>db.persons.filter(p=>p.group_id===g.id).reduce((a,p)=>a+totalV(p.id),0)),1);
+  document.getElementById('groupRatingChart').innerHTML=GROUPS.map((g,i)=>{
+    const cnt=db.persons.filter(p=>p.group_id===g.id).reduce((a,p)=>a+totalV(p.id),0);
+    const pct=Math.round((cnt/maxGR)*100);
+    const colors=['#4f46e5','#22c55e','#3b82f6','#9333ea'];
+    return `<div class="bar-row"><div class="bar-label" title="${g.name}">${g.name.split(' ')[0]}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[i]}"></div></div><div class="bar-val">${cnt}</div></div>`;
+  }).join('');
+  const sc=[1,2,3,4,5].map(s=>db.ratings.filter(r=>r.stars===s).length);
+  const maxS=Math.max(...sc,1);
+  document.getElementById('starDistChart').innerHTML=sc.map((c,i)=>{
+    const pct=Math.round((c/maxS)*100);
+    return `<div class="star-dist-row"><div class="star-dist-label">${i+1}★</div><div class="star-dist-bar"><div class="star-dist-fill" style="width:${pct}%"></div></div><div class="star-dist-count">${c}</div></div>`;
+  }).reverse().join('');
+  const ranked=[...db.persons].sort((a,b)=>personAvg(b.id)-personAvg(a.id));
+  document.getElementById('topPersonsLb').innerHTML=ranked.slice(0,10).map((p,i)=>lbItemHtml(p,i+1)).join('');
+  const bottom=[...db.persons].filter(p=>totalV(p.id)>0).sort((a,b)=>personAvg(a.id)-personAvg(b.id));
+  document.getElementById('lowPersonsLb').innerHTML=bottom.slice(0,10).map((p,i)=>lbItemHtml(p,i+1)).join('');
+}
+function lbItemHtml(p,rank){
+  const avg=personAvg(p.id);const votes=totalV(p.id);const thumb=(pPhotos(p.id)[0]||{}).url||'';
+  const rc=rank===1?'gold':rank===2?'silver':rank===3?'bronze':'other';
+  return `<div class="lb-item"><div class="lb-rank ${rc}">${rank}</div><img class="lb-thumb" src="${thumb}"/><div class="lb-info"><div class="lb-name">${p.name}</div><div class="lb-sub">${getGrp(p.group_id).name.split(' ')[0]} · ${votes} votes</div></div><div class="lb-stars">${avg.toFixed(2)}★</div></div>`;
+}
+function renderPersonList(){
+  const q=(document.getElementById('personSearch')||{}).value?.toLowerCase()||'';
+  const list=db.persons.filter(p=>p.name.toLowerCase().includes(q)||getGrp(p.group_id).name.toLowerCase().includes(q));
+  document.getElementById('adminPersonList').innerHTML=list.length
+    ?list.map(p=>{const ph=pPhotos(p.id);const g=getGrp(p.group_id);const cov=(ph[0]||{}).url||'';
+      return `<div class="p-list-item"><img src="${cov}"/><div class="nm">${sanitize(p.name)}<div class="tg">${g.name.split(' ')[0]} · ${ph.length} photos · ⭐${personAvg(p.id).toFixed(1)} · ${totalV(p.id)} votes</div></div>
+      <button class="btn-warn" onclick="openWhoRated(${p.id})" title="See who rated">👁</button>
+      <button class="btn-edit" onclick="openEditPerson(${p.id})">✏️</button>
+      <button class="btn-del" onclick="delPersonConfirm(${p.id})">🗑</button></div>`;
+    }).join('')
+    :'<p style="color:var(--muted);padding:10px">No persons found.</p>';
+}
+function renderPhotoOverview(){
+  document.getElementById('photoOverview').innerHTML=db.persons.slice(0,20).map(p=>{
+    const phs=pPhotos(p.id);if(!phs.length)return '';
+    return `<div style="margin-bottom:16px;padding:12px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
+      <div style="font-size:.84rem;font-weight:700;margin-bottom:8px">${sanitize(p.name)} <span style="color:var(--muted);font-weight:400;font-size:.75rem">(${phs.length} photos)</span></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">${phs.map(ph=>`<div style="position:relative"><img src="${ph.url}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:2px solid var(--border)"/><div style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.6);color:#fff;font-size:.6rem;padding:1px 4px;border-radius:4px">📸${ph.order}</div></div>`).join('')}</div></div>`;
+  }).join('');
+}
+function renderRatingsList(){
+  const q=(document.getElementById('ratingSearch')||{}).value?.toLowerCase()||'';
+  const rows=[];
+  db.persons.forEach(p=>{const g=getGrp(p.group_id);pPhotos(p.id).forEach(ph=>{pRatings(ph.id).forEach(r=>{if(!q||p.name.toLowerCase().includes(q)||r.voter_name?.toLowerCase().includes(q))rows.push({r,p,g,ph});});});});
+  rows.sort((a,b)=>b.r.ts-a.r.ts);
+  document.getElementById('ratingsTableBody').innerHTML=rows.slice(0,200).map(({r,p,g,ph})=>`
+    <tr><td><b>${sanitize(p.name)}</b></td><td style="color:var(--muted);font-size:.78rem">${g.name.split(' ')[0]}</td><td>Photo ${ph.order}</td>
+    <td style="color:var(--accent)">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</td>
+    <td style="font-size:.78rem">${sanitize(r.voter_name||r.voter)}</td>
+    <td style="color:var(--muted);font-size:.74rem">${r.ts?timeAgo(r.ts):'—'}</td>
+    <td><button class="btn-warn" onclick="openWhoRated(${p.id})" style="font-size:.7rem;padding:3px 8px">👁</button></td>
+    <td><button class="btn-del" onclick="delRating(${r.id})">✕</button></td></tr>`).join('')
+    ||'<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">No ratings found</td></tr>';
+}
+function renderUsersList(){
+  const q=(document.getElementById('userSearch')||{}).value?.toLowerCase()||'';
+  const ulist=Object.values(users).filter(u=>u.name.toLowerCase().includes(q)||u.sid.includes(q));
+  document.getElementById('usersTableBody').innerHTML=ulist.map((u,i)=>{
+    const rc=db.ratings.filter(r=>r.voter===u.sid).length;
+    return `<tr><td style="color:var(--muted)">${i+1}</td><td><b>${sanitize(u.name)}</b></td>
+      <td><code style="font-size:.75rem">${u.sid}</code></td><td style="color:var(--muted);font-size:.78rem">${u.email||'—'}</td>
+      <td><span class="${u.role==='admin'?'role-admin':'role-user'}" onclick="toggleRole('${u.sid}')" title="Click to toggle role" style="cursor:pointer">${u.role}</span></td>
+      <td>${rc}</td>
+      <td style="display:flex;gap:5px">
+        ${u.sid!=='admin'?`<button class="btn-del" onclick="deleteUserConfirm('${u.sid}')">🗑</button>`:''}
+        ${rc>0?`<button class="btn-warn" onclick="clearUserRatingsConfirm('${u.sid}','${u.name}')">🗑⭐</button>`:''}
+      </td></tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">No users</td></tr>';
+}
+function renderActivityLog(){
+  const el=document.getElementById('activityLogList');
+  if(!activityLog.length){el.innerHTML='<p style="color:var(--muted);padding:10px;font-size:.84rem">No activity yet.</p>';return;}
+  const colors={login:'#22c55e',logout:'#6b7280',rating:'#f59e0b',register:'#4f46e5',delete:'#ef4444',warn:'#f97316',info:'#3b82f6'};
+  el.innerHTML=activityLog.map(a=>`<div class="activity-item"><div class="act-dot" style="background:${colors[a.type]||colors.info}"></div><div class="act-text">${sanitize(a.msg)}</div><div class="act-time">${timeAgo(a.ts)}</div></div>`).join('');
+}
+
+// ===== CHANGE ADMIN PASSWORD =====
+function changeAdminPw(){
+  const cur=document.getElementById('curPw').value;
+  const nw=document.getElementById('newPw').value;
+  const conf=document.getElementById('confPw').value;
+  if(!cur||!nw||!conf){toast('Fill all fields','warn');return;}
+  if(users['admin'].pw!==hashPw(cur)){toast('❌ Current password wrong','error');return;}
+  if(nw.length<4){toast('❌ Min 4 characters','error');return;}
+  if(nw!==conf){toast('❌ Passwords do not match','error');return;}
+  users['admin'].pw=hashPw(nw);
+  saveUsers(users);
+  document.getElementById('curPw').value='';document.getElementById('newPw').value='';document.getElementById('confPw').value='';
+  toast('✅ Admin password updated!');
+  logActivity('Admin password changed','info');
+}
+
+// ===== REGISTER NEW USER =====
+function registerUser(){
+  const name=sanitize(document.getElementById('regName').value.trim());
+  const sid=document.getElementById('regSid').value.trim();
+  const pin=document.getElementById('regPin').value;
+  const role=document.getElementById('regRole').value;
+  if(!name||!sid||!pin){toast('Fill all fields','warn');return;}
+  if(sid!=='admin'&&!/^\d{3}-\d{2}-\d{3,4}$/.test(sid)){toast('❌ Invalid ID format','error');return;}
+  if(pin.length<4){toast('❌ PIN min 4 chars','error');return;}
+  if(users[sid]){toast('❌ User ID already exists','error');return;}
+  users[sid]={name,sid,email:'',pw:hashPw(pin),role,created:Date.now()};
+  saveUsers(users);
+  toast(`✅ Account created: ${name}`);
+  logActivity(`Registered new user: ${name} (${sid}) as ${role}`,'register');
+  document.getElementById('regName').value='';document.getElementById('regSid').value='';document.getElementById('regPin').value='';
+  renderUsersList();document.getElementById('badge-users').textContent=Object.keys(users).length;
+}
+
+// ===== EDIT PERSON =====
+function openEditPerson(pid){
+  const p=db.persons.find(x=>x.id===pid);if(!p)return;
+  document.getElementById('editPid').value=pid;document.getElementById('editName').value=p.name;
+  document.getElementById('editDesc').value=p.description||'';document.getElementById('editGrp').value=p.group_id;
+  document.getElementById('editModal').classList.add('show');
+}
+function closeEditModal(){document.getElementById('editModal').classList.remove('show');}
+function saveEditPerson(){
+  const pid=parseInt(document.getElementById('editPid').value);
+  const name=sanitize(document.getElementById('editName').value.trim());
+  const desc=sanitize(document.getElementById('editDesc').value.trim());
+  const gid=document.getElementById('editGrp').value;
+  if(!name){toast('Name required','error');return;}
+  const p=db.persons.find(x=>x.id===pid);if(!p)return;
+  logActivity(`Edited person: ${p.name} → ${name}`,'info');
+  p.name=name;p.description=desc;p.group_id=gid;
+  saveDB(db);closeEditModal();toast(`${name} updated!`);renderPersonList();filterPersons();
+}
+
+// ===== CONFIRM MODAL =====
+let _confirmCb=null;
+function showConfirm(icon,title,msg,cb){document.getElementById('confirmIcon').textContent=icon;document.getElementById('confirmTitle').textContent=title;document.getElementById('confirmMsg').textContent=msg;_confirmCb=cb;document.getElementById('confirmModal').classList.add('show');}
+function closeConfirm(){document.getElementById('confirmModal').classList.remove('show');_confirmCb=null;}
+function confirmYes(){closeConfirm();if(_confirmCb)_confirmCb();}
+function delPersonConfirm(id){const p=db.persons.find(x=>x.id===id);showConfirm('🗑','Delete Person',`Delete "${p?.name}" and all their data?`,()=>delPerson(id));}
+function deleteUserConfirm(sid){showConfirm('👤','Delete User',`Delete user "${users[sid]?.name}"?`,()=>deleteUser(sid));}
+function clearUserRatingsConfirm(sid,name){showConfirm('⭐','Clear Ratings',`Remove all ratings by "${name}"?`,()=>clearUserRatings(sid,name));}
+function confirmClearAll(){showConfirm('⚠️','Clear ALL Ratings','This permanently deletes every rating!',()=>{db.ratings=[];saveDB(db);toast('All ratings cleared');renderRatingsList();renderDashboard();logActivity('Admin cleared ALL ratings','delete');document.getElementById('badge-ratings').textContent=0;});}
+
+// ===== CRUD =====
+function addPerson(){
+  const name=sanitize(document.getElementById('newName').value.trim());const desc=sanitize(document.getElementById('newDesc').value.trim());const gid=document.getElementById('newGrp').value;
+  if(!name){toast('Name required','error');return;}if(!gid){toast('Select group','warn');return;}
+  db.persons.push({id:db.npid++,name,description:desc,group_id:gid,created_at:Date.now()});
+  saveDB(db);document.getElementById('newName').value='';document.getElementById('newDesc').value='';
+  toast(`${name} added!`);logActivity(`Added person: ${name}`,'info');
+  renderPersonList();filterPersons();document.getElementById('badge-persons').textContent=db.persons.length;
+}
+function delPerson(id){
+  const p=db.persons.find(x=>x.id===id);const ids=pPhotos(id).map(p=>p.id);
+  db.persons=db.persons.filter(p=>p.id!==id);db.photos=db.photos.filter(p=>p.person_id!==id);db.ratings=db.ratings.filter(r=>!ids.includes(r.photo_id));
+  saveDB(db);toast('Deleted!');logActivity(`Deleted person: ${p?.name}`,'delete');
+  renderPersonList();filterPersons();document.getElementById('badge-persons').textContent=db.persons.length;
+}
+function previewPhotos(){
+  const files=document.getElementById('photoInput').files;const row=document.getElementById('previewRow');row.innerHTML='';
+  Array.from(files).slice(0,5).forEach(f=>{const img=document.createElement('img');const r=new FileReader();r.onload=e=>img.src=e.target.result;r.readAsDataURL(f);row.appendChild(img);});
+}
+function uploadPhotos(){
+  const pid=parseInt(document.getElementById('upPerson').value);if(!pid){toast('Select person','warn');return;}
+  const files=document.getElementById('photoInput').files;if(!files.length){toast('Select photos','warn');return;}
+  const exIds=pPhotos(pid).map(p=>p.id);
+  db.photos=db.photos.filter(p=>p.person_id!==pid);db.ratings=db.ratings.filter(r=>!exIds.includes(r.photo_id));
+  let done=0;
+  Array.from(files).slice(0,5).forEach((f,i)=>{
+    const r=new FileReader();
+    r.onload=e=>{db.photos.push({id:db.nphid++,person_id:pid,url:e.target.result,order:i+1});
+      if(++done===Math.min(files.length,5)){saveDB(db);toast(`${done} photos uploaded!`);document.getElementById('previewRow').innerHTML='';document.getElementById('photoInput').value='';renderPhotoOverview();logActivity(`Uploaded ${done} photos`,'info');}};
+    r.readAsDataURL(f);
+  });
+}
+function delRating(id){db.ratings=db.ratings.filter(r=>r.id!==id);saveDB(db);toast('Rating removed');logActivity('Deleted a rating','delete');renderRatingsList();renderDashboard();document.getElementById('badge-ratings').textContent=db.ratings.length;}
+function clearSeedRatings(){const b=db.ratings.length;db.ratings=db.ratings.filter(r=>!r.voter.startsWith('seed_'));saveDB(db);const rm=b-db.ratings.length;toast(`Removed ${rm} seed ratings`);logActivity(`Cleared ${rm} seed ratings`,'delete');renderRatingsList();renderDashboard();document.getElementById('badge-ratings').textContent=db.ratings.length;}
+function toggleRole(sid){if(sid==='admin'){toast('Cannot change admin role','warn');return;}users[sid].role=users[sid].role==='admin'?'user':'admin';saveUsers(users);toast(`Role updated: ${users[sid].role}`);logActivity(`Changed role of ${users[sid].name} to ${users[sid].role}`,'info');renderUsersList();}
+function deleteUser(sid){logActivity(`Deleted user: ${users[sid]?.name}`,'delete');delete users[sid];saveUsers(users);toast('User deleted');renderUsersList();document.getElementById('badge-users').textContent=Object.keys(users).length;}
+function clearUserRatings(sid,name){const b=db.ratings.length;db.ratings=db.ratings.filter(r=>r.voter!==sid);saveDB(db);const rm=b-db.ratings.length;toast(`Removed ${rm} ratings from ${name}`);logActivity(`Cleared ${rm} ratings by ${name}`,'delete');renderUsersList();renderRatingsList();renderDashboard();}
+
+function exportToExcel(){
+  const rows=[['Person Name','Group Name','Group Member ID','Photo Number','Rating (Stars)','Voter ID','Voter Name','Timestamp']];
+  db.persons.forEach(p=>{const g=getGrp(p.group_id);pPhotos(p.id).forEach(ph=>{pRatings(ph.id).forEach(r=>{rows.push([p.name,g.name,g.sid,ph.order,r.stars,r.voter,r.voter_name||'Unknown',r.ts?new Date(r.ts).toLocaleString():'N/A']);});});});
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:20},{wch:24},{wch:14},{wch:12},{wch:14},{wch:20},{wch:20},{wch:22}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Ratings');
+  XLSX.writeFile(wb,`FaceRating_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel downloaded! 📥');logActivity('Exported Excel report','info');
+}
+function exportUsersExcel(){
+  const rows=[['Name','Student ID','Email','Role','Ratings Count','Created']];
+  Object.values(users).forEach(u=>{const rc=db.ratings.filter(r=>r.voter===u.sid).length;rows.push([u.name,u.sid,u.email||'',u.role,rc,u.created?new Date(u.created).toLocaleString():'']);});
+  const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:22},{wch:14},{wch:22},{wch:8},{wch:14},{wch:22}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Users');
+  XLSX.writeFile(wb,`FaceRating_Users_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Users Excel downloaded! 📥');logActivity('Exported Users Excel','info');
+}
+
+document.addEventListener('keydown',e=>{
+  const m=document.getElementById('ratingModal');if(m.classList.contains('hidden'))return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')modalNext();
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp')modalPrev();
+  else if(e.key==='Escape')closeRatingModal();
+  else if(e.key>='1'&&e.key<='5')submitModalRating(parseInt(e.key));
+});
+
+(function init(){
+  renderHomeTeam();
+  const sess=loadSession();
+  if(sess&&users[sess.sid]){
+    const u=users[sess.sid];currentUser=u;
+    document.getElementById('authOverlay').classList.add('hidden');
+    updateNavUser();
+    if(u.role==='admin')document.getElementById('nl-admin').style.display='';
+  }
+})();
+</script>
+</body>
+</html>
